@@ -175,6 +175,20 @@ var interactiveTests = []struct {
 		},
 		wantErr: "1:1: reached EOF without matching ( with )",
 	},
+	{
+		pairs: []string{
+			"gosh_alias arg || true\n",
+			"\"gosh_alias\": executable file not found in $PATH\n$ ",
+			"alias gosh_alias=echo\n",
+			"$ ",
+			"gosh_alias arg || true\n",
+			"arg\n$ ",
+			"unalias gosh_alias\n",
+			"$ ",
+			"gosh_alias arg || true\n",
+			"\"gosh_alias\": executable file not found in $PATH\n$ ",
+		},
+	},
 }
 
 func TestInteractive(t *testing.T) {
@@ -185,7 +199,7 @@ func TestInteractive(t *testing.T) {
 			qt.Assert(t, qt.IsNil(err))
 			outReader, outWriter, err := os.Pipe()
 			qt.Assert(t, qt.IsNil(err))
-			runner, _ := interp.New(interp.StdIO(inReader, outWriter, outWriter))
+			runner, _ := interp.New(interp.Interactive(true), interp.StdIO(inReader, outWriter, outWriter))
 			errc := make(chan error, 1)
 			go func() {
 				errc <- runInteractive(runner, inReader, outWriter, outWriter)
@@ -240,7 +254,7 @@ func TestInteractiveExit(t *testing.T) {
 		inWriter.Close()
 	}()
 	w := io.Discard
-	runner, _ := interp.New(interp.StdIO(inReader, w, w))
+	runner, _ := interp.New(interp.Interactive(true), interp.StdIO(inReader, w, w))
 	if err := runInteractive(runner, inReader, w, w); err != nil {
 		t.Fatal("expected a nil error")
 	}
